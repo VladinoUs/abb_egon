@@ -1,0 +1,41 @@
+{
+  "title": "ABB Egon",
+  "config": {
+    "step": {
+      "user": {
+        "title": "ABB Egon",
+        "data": {
+          "host": "IP-cím vagy hosztnév",
+          "port": "Port",
+          "user": "Felhasználónév",
+          "password": "Jelszó"
+        },
+        "data_description": {
+          "host": "Az ABB Egon modul IP-címe.",
+          "port": "Az ABB Egon modul HTTP portja.",
+          "user": "ABB Egon felhasználónév.",
+          "password": "ABB Egon jelszó."
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Az integráció már be van állítva"
+    },
+    "error": {
+      "cannot_connect": "Nem sikerült csatlakozni"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "ABB Egon beállítások",
+        "data": {
+          "scan_interval": "Lekérdezési időköz (másodperc)"
+        },
+        "data_description": {
+          "scan_interval": "Milyen gyakran kérdezze le az integráció az ABB Egon frissítéseit."
+        }
+      }
+    }
+  }
+}

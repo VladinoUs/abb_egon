@@ -1,0 +1,35 @@
+{
+  "title": "ABB Egon",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add ABB Egon",
+        "description": "Connect Home Assistant to your ABB Egon controller.",
+        "data": {
+          "host": "Host / IP address",
+          "port": "Port",
+          "username": "Username",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to ABB Egon.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This ABB Egon controller is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "ABB Egon options",
+        "description": "Adjust how often Home Assistant refreshes data from ABB Egon.",
+        "data": {
+          "scan_interval": "Scan interval (seconds)"
+        }
+      }
+    }
+  }
+}

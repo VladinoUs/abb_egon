@@ -1,0 +1,13 @@
+{
+  "domain": "abb_egon",
+  "name": "ABB Egon",
+  "codeowners": ["@VladinoUs"],
+  "config_flow": true,
+  "documentation": "https://github.com/VladinoUs/abb_egon",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/VladinoUs/abb_egon/issues",
+  "loggers": ["custom_components.abb_egon"],
+  "requirements": [],
+  "version": "0.1.0"
+}

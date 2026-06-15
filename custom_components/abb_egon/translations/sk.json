@@ -1,0 +1,35 @@
+{
+  "title": "ABB Egon",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Pridať ABB Egon",
+        "description": "Pripojte Home Assistant k vášmu ABB Egon kontroléru.",
+        "data": {
+          "host": "Hostiteľ / IP adresa",
+          "port": "Port",
+          "username": "Používateľské meno",
+          "password": "Heslo"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nepodarilo sa pripojiť k ABB Egon.",
+      "unknown": "Nastala neočakávaná chyba."
+    },
+    "abort": {
+      "already_configured": "Tento ABB Egon kontrolér je už nakonfigurovaný."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Možnosti ABB Egon",
+        "description": "Nastavte, ako často má Home Assistant obnovovať dáta z ABB Egon.",
+        "data": {
+          "scan_interval": "Interval obnovy (sekundy)"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "title": "ABB Egon",
+  "config": {
+    "step": {
+      "user": {
+        "title": "ABB Egon",
+        "data": {
+          "host": "IP-Adresse oder Hostname",
+          "port": "Port",
+          "user": "Benutzername",
+          "password": "Passwort"
+        },
+        "data_description": {
+          "host": "IP-Adresse des ABB Egon Moduls.",
+          "port": "HTTP-Port des ABB Egon Moduls.",
+          "user": "Benutzername für ABB Egon.",
+          "password": "Passwort für ABB Egon."
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Die Integration ist bereits eingerichtet"
+    },
+    "error": {
+      "cannot_connect": "Verbindung konnte nicht hergestellt werden"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "ABB Egon Optionen",
+        "data": {
+          "scan_interval": "Abfrageintervall (Sekunden)"
+        },
+        "data_description": {
+          "scan_interval": "Wie oft die Integration ABB Egon auf Änderungen abfragen soll."
+        }
+      }
+    }
+  }
+}
