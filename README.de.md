@@ -170,7 +170,7 @@ Dieses Projekt ist kostenlos und Open Source. Wenn es dir Zeit gespart oder dein
 ☕ **Einen Kaffee über Revolut spendieren:**  
 [https://revolut.me/sdaddy](https://revolut.me/sdaddy)
 
-![Revolut QR](revolut_qr.jpg)
+![Revolut QR](./revolut_qr.png)
 
 ---
 
