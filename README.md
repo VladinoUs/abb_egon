@@ -6,13 +6,13 @@
 
 Jazykové verzie: [Slovenčina](README.md) | [English](README.en.md) | [Deutsch](README.de.md) | [Magyar](README.hu.md) | [Polski](README.pl.md)
 
-Vlastná integrácia pre Home Assistant pre inteligentný elektroinštalačný systém **ABB Egon**. Integrácia komunikuje priamo s lokálnym HTTP/XML API komunikačného modulu ABB Egon bez cloudu a bez služieb tretích strán [web:177][web:179].
+Vlastná integrácia pre Home Assistant pre inteligentný elektroinštalačný systém **ABB Egon**. Integrácia komunikuje priamo s lokálnym HTTP/XML API komunikačného modulu ABB Egon bez cloudu a bez služieb tretích strán.
 
 ---
 
 ## Prehľad
 
-Táto integrácia umožňuje pripojiť ABB Egon do Home Assistanta cez lokálnu sieť alebo cez externý prístup, ak je zariadenie dostupné cez presmerovanie portov. Konfigurácia prebieha cez natívny Home Assistant config flow, takže nie je potrebné upravovať `configuration.yaml` [web:173][web:177].
+Táto integrácia umožňuje pripojiť ABB Egon do Home Assistanta cez lokálnu sieť alebo cez externý prístup, ak je zariadenie dostupné cez presmerovanie portov. Konfigurácia prebieha cez natívny Home Assistant config flow, takže nie je potrebné upravovať `configuration.yaml`.
 
 ### Hlavné vlastnosti
 
@@ -28,13 +28,13 @@ Táto integrácia umožňuje pripojiť ABB Egon do Home Assistanta cez lokálnu 
 
 ## O ABB Ego-n
 
-Inteligentný systém domovej elektroinštalácie **ABB Ego-n** bol na trhu dostupný od roku 2007 a ABB ho prezentovalo ako prístupné riešenie pre novostavby aj rekonštrukcie [web:185][web:186].
+Inteligentný systém domovej elektroinštalácie **ABB Ego-n** bol na trhu dostupný od roku 2007 a ABB ho prezentovalo ako prístupné riešenie pre novostavby aj rekonštrukcie.
 
-Vývoj a distribúcia systému boli v roku **2017** ukončené a podľa IQinstalace táto spoločnosť následne prevzala servis, technickú podporu aj dodávky nových dielov pre tento systém [web:185].
+Vývoj a distribúcia systému boli v roku **2017** ukončené a podľa IQinstalace táto spoločnosť následne prevzala servis, technickú podporu aj dodávky nových dielov pre tento systém.
 
 Náhradné diely, servis a technickú podporu je možné nájsť napríklad tu:
-- [iqinstalace.cz/elektroinstalace](http://iqinstalace.cz/elektroinstalace/) [web:185]
-- [viktorstrouhal@seznam.cz](mailto:viktorstrouhal@seznam.cz) [web:185]
+- [iqinstalace.cz/elektroinstalace](http://iqinstalace.cz/elektroinstalace/)
+- [viktorstrouhal@seznam.cz](mailto:viktorstrouhal@seznam.cz)
 
 ---
 
@@ -64,7 +64,7 @@ Ak používaš HACS, môžeš integráciu pridať ako vlastný repozitár:
    `https://github.com/VladinoUs/abb_egon`
 5. Ako typ repozitára vyber **Integration**.
 6. Nainštaluj integráciu.
-7. Reštartuj Home Assistant [web:173][web:184][web:179].
+7. Reštartuj Home Assistant.
 
 ---
 
@@ -85,7 +85,7 @@ do svojho Home Assistant priečinka:
 /config/custom_components/abb_egon
 ```
 
-3. Reštartuj Home Assistant [web:177][web:176].
+3. Reštartuj Home Assistant.
 
 ---
 
@@ -96,7 +96,7 @@ Po reštarte Home Assistanta:
 1. Otvor **Settings** → **Devices & Services**.
 2. Klikni na **Add Integration**.
 3. Vyhľadaj **ABB Egon**.
-4. Zadaj prístupové údaje k ABB Egon modulu [web:173].
+4. Zadaj prístupové údaje k ABB Egon modulu.
 
 ### Lokálny prístup v sieti
 
@@ -134,7 +134,7 @@ Integrácia podporuje aj používateľské nastavenia cez **Options flow**.
 Aktuálne je možné meniť najmä:
 - interval obnovovania dát (`scan_interval`)
 
-Po zmene nastavení sa integrácia automaticky znovu načíta, aby sa nové hodnoty prejavili bez potreby ručného zásahu [web:70].
+Po zmene nastavení sa integrácia automaticky znovu načíta, aby sa nové hodnoty prejavili bez potreby ručného zásahu.
 
 ---
 
