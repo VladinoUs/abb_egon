@@ -170,7 +170,7 @@ Ez a projekt ingyenes és nyílt forráskódú. Ha időt spórolt neked vagy jav
 ☕ **Hívj meg egy kávéra Revoluton keresztül:**  
 [https://revolut.me/sdaddy](https://revolut.me/sdaddy)
 
-![Revolut QR](./revolut_qr.png)
+![Revolut QR](https://raw.githubusercontent.com/VladinoUs/abb_egon/main/revolut_qr.png)
 
 ---
 
