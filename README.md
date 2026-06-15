@@ -172,7 +172,7 @@ Tento projekt je bezplatný a open source. Ak ti ušetril čas alebo zlepšil tv
 ☕ **Pozvi ma na kávu cez Revolut:**  
 [https://revolut.me/sdaddy](https://revolut.me/sdaddy)
 
-![Revolut QR](./revolut_qr.png)
+![Revolut QR](https://raw.githubusercontent.com/VladinoUs/abb_egon/main/revolut_qr.png)
 
 ---
 
