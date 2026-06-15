@@ -170,7 +170,7 @@ This project is free and open source. If it saved you time or improved your smar
 ☕ **Buy me a coffee via Revolut:**  
 [https://revolut.me/sdaddy](https://revolut.me/sdaddy)
 
-![Revolut QR](revolut_qr.jpg)
+![Revolut QR](./revolut_qr.png)
 
 ---
 
