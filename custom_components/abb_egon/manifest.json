@@ -7,6 +7,5 @@
   "codeowners": ["@VladinoUs"],
   "config_flow": true,
   "integration_type": "hub",
-  "iot_class": "local_polling",
-  "homeassistant": "2024.1.0"
+  "iot_class": "local_polling"
 }
