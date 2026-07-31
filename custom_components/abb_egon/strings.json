@@ -11,14 +11,24 @@
           "username": "Username",
           "password": "Password"
         }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate ABB Egon",
+        "description": "Update your ABB Egon credentials.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
       }
     },
     "error": {
       "cannot_connect": "Failed to connect to ABB Egon.",
+      "invalid_auth": "Invalid username or password.",
       "unknown": "Unexpected error."
     },
     "abort": {
-      "already_configured": "This ABB Egon controller is already configured."
+      "already_configured": "This ABB Egon controller is already configured.",
+      "reauth_successful": "Re-authentication was successful."
     }
   },
   "options": {
