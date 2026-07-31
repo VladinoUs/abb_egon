@@ -30,23 +30,26 @@ class ABBEgonClient:
         self._device: str | None = None
 
         _LOGGER.debug(
-            "ABBEgonClient initialized host=%s port=%s username=%s",
+            "ABBEgonClient initialized host=%s port=%s",
             self._host,
             self._port,
-            self._username,
         )
 
     @property
     def device(self) -> str | None:
         return self._device
 
-    async def _async_http_get(self, path: str, params: dict[str, Any] | None = None) -> str:
+    async def _async_http_get(
+        self,
+        path: str,
+        params: dict[str, Any] | None = None,
+    ) -> str:
         query = urlencode(params or {})
         url = f"{self._base_url}/{path}"
         if query:
             url = f"{url}?{query}"
 
-        _LOGGER.debug("ABB Egon HTTP GET %s", url)
+        _LOGGER.debug("ABB Egon HTTP GET path=%s", path)
 
         async with self._session.get(url, timeout=self._timeout) as response:
             text = await response.text(errors="ignore")
@@ -60,11 +63,7 @@ class ABBEgonClient:
             return text
 
     async def async_authorize(self) -> str:
-        _LOGGER.debug(
-            "ABB Egon authorize start url=%s/authorize.html username=%s",
-            self._base_url,
-            self._username,
-        )
+        _LOGGER.debug("ABB Egon authorize start path=authorize.html")
 
         text = await self._async_http_get(
             "authorize.html",
@@ -84,11 +83,7 @@ class ABBEgonClient:
             raise ValueError("ABB Egon authorization returned empty device id")
 
         self._device = device
-        _LOGGER.debug(
-            "ABB Egon authorize success raw=%s normalized_device=%s",
-            text.strip(),
-            self._device,
-        )
+        _LOGGER.debug("ABB Egon authorize success normalized_device=%s", self._device)
         return self._device
 
     async def _async_authenticated_get(
@@ -104,22 +99,22 @@ class ABBEgonClient:
 
         text = await self._async_http_get(path, params)
         _LOGGER.debug(
-            "ABB Egon authenticatedget success path=%s responselength=%s",
+            "ABB Egon authenticated_get success path=%s response_length=%s",
             path,
             len(text),
         )
         return text
 
     async def async_get_config(self) -> str:
-        _LOGGER.debug("ABB Egon getconfig device=%s", self._device)
+        _LOGGER.debug("ABB Egon get_config device=%s", self._device)
         return await self._async_authenticated_get("config.html")
 
     async def async_get_state(self, group: int | str) -> str:
-        _LOGGER.debug("ABB Egon getstate group=%s device=%s", group, self._device)
+        _LOGGER.debug("ABB Egon get_state group=%s device=%s", group, self._device)
         return await self._async_authenticated_get("state.html", {"group": group})
 
     async def async_get_all_states(self) -> str:
-        _LOGGER.debug("ABB Egon getallstates device=%s", self._device)
+        _LOGGER.debug("ABB Egon get_all_states device=%s", self._device)
         return await self._async_authenticated_get("state.html", {"group": 11})
 
     async def async_send_action(self, element_id: str | int, action: str | int) -> str:
@@ -148,7 +143,7 @@ class ABBEgonClient:
                 raise ValueError(f"Unsupported ABB Egon action: {action}")
 
         _LOGGER.debug(
-            "ABB Egon sendaction id=%s action=%s mapped_action=%s device=%s",
+            "ABB Egon send_action id=%s action=%s mapped_action=%s device=%s",
             element_id,
             raw_action,
             abb_action,
@@ -164,7 +159,7 @@ class ABBEgonClient:
         )
 
         _LOGGER.debug(
-            "ABB Egon sendaction response id=%s action=%s response=%s",
+            "ABB Egon send_action response id=%s action=%s response=%s",
             element_id,
             abb_action,
             response.strip(),
