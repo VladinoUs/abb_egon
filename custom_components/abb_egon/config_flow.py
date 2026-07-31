@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 import logging
-from typing import Any
+from typing import Any, Mapping
 
+import aiohttp
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -26,6 +28,37 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
+class CannotConnect(Exception):
+    """Error to indicate we cannot connect."""
+
+
+class InvalidAuth(Exception):
+    """Error to indicate there is invalid auth."""
+
+
+async def _validate_input(hass, data: dict[str, Any]) -> str:
+    """Validate the user input allows us to connect."""
+    session = async_get_clientsession(hass)
+    client = ABBEgonClient(
+        session=session,
+        host=data[CONF_HOST],
+        port=data[CONF_PORT],
+        username=data[CONF_USERNAME],
+        password=data[CONF_PASSWORD],
+    )
+
+    try:
+        await client.async_authorize()
+    except aiohttp.ClientResponseError as err:
+        if err.status in (401, 403):
+            raise InvalidAuth from err
+        raise CannotConnect from err
+    except (aiohttp.ClientError, asyncio.TimeoutError, TimeoutError, ValueError) as err:
+        raise CannotConnect from err
+
+    return f"{data[CONF_HOST]}:{data[CONF_PORT]}"
+
+
 class ABBEgonConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for ABB Egon."""
 
@@ -38,19 +71,8 @@ class ABBEgonConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            session = async_get_clientsession(self.hass)
-            client = ABBEgonClient(
-                session=session,
-                host=user_input[CONF_HOST],
-                port=user_input[CONF_PORT],
-                username=user_input[CONF_USERNAME],
-                password=user_input[CONF_PASSWORD],
-            )
-
             try:
-                await client.async_authorize()
-
-                unique_id = f"{user_input[CONF_HOST]}:{user_input[CONF_PORT]}"
+                unique_id = await _validate_input(self.hass, user_input)
                 await self.async_set_unique_id(unique_id)
                 self._abort_if_unique_id_configured()
 
@@ -63,10 +85,13 @@ class ABBEgonConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_PASSWORD: user_input[CONF_PASSWORD],
                     },
                 )
-
-            except Exception as err:
-                _LOGGER.warning("ABB Egon config flow failed: %s", err)
+            except InvalidAuth:
+                errors["base"] = "invalid_auth"
+            except CannotConnect:
                 errors["base"] = "cannot_connect"
+            except Exception:  # pragma: no cover
+                _LOGGER.exception("Unexpected exception during ABB Egon config flow")
+                errors["base"] = "unknown"
 
         return self.async_show_form(
             step_id="user",
@@ -76,6 +101,56 @@ class ABBEgonConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
                     vol.Required(CONF_USERNAME, default=DEFAULT_USERNAME): str,
                     vol.Required(CONF_PASSWORD, default=DEFAULT_PASSWORD): str,
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_reauth(
+        self, entry_data: Mapping[str, Any]
+    ) -> ConfigFlowResult:
+        """Perform reauthentication when credentials fail."""
+        await self.async_set_unique_id(f"{entry_data[CONF_HOST]}:{entry_data[CONF_PORT]}")
+        self._abort_if_unique_id_mismatch()
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Confirm reauthentication."""
+        errors: dict[str, str] = {}
+        reauth_entry = self._get_reauth_entry()
+
+        if user_input is not None:
+            data = {
+                **reauth_entry.data,
+                CONF_USERNAME: user_input[CONF_USERNAME],
+                CONF_PASSWORD: user_input[CONF_PASSWORD],
+            }
+
+            try:
+                await _validate_input(self.hass, data)
+            except InvalidAuth:
+                errors["base"] = "invalid_auth"
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
+            except Exception:  # pragma: no cover
+                _LOGGER.exception("Unexpected exception during ABB Egon reauth flow")
+                errors["base"] = "unknown"
+            else:
+                self.hass.config_entries.async_update_entry(reauth_entry, data=data)
+                await self.hass.config_entries.async_reload(reauth_entry.entry_id)
+                return self.async_abort(reason="reauth_successful")
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_USERNAME,
+                        default=reauth_entry.data.get(CONF_USERNAME, DEFAULT_USERNAME),
+                    ): str,
+                    vol.Required(CONF_PASSWORD): str,
                 }
             ),
             errors=errors,
