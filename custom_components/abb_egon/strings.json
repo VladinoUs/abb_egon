@@ -13,8 +13,8 @@
         }
       },
       "reauth_confirm": {
-        "title": "Re-authenticate ABB Egon",
-        "description": "Update your ABB Egon credentials.",
+        "title": "Reconnect ABB Egon",
+        "description": "Update your ABB Egon login details.",
         "data": {
           "username": "Username",
           "password": "Password"
