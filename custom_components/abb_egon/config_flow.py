@@ -89,7 +89,7 @@ class ABBEgonConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "invalid_auth"
             except CannotConnect:
                 errors["base"] = "cannot_connect"
-            except Exception:  # pragma: no cover
+            except Exception:
                 _LOGGER.exception("Unexpected exception during ABB Egon config flow")
                 errors["base"] = "unknown"
 
@@ -134,7 +134,7 @@ class ABBEgonConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "invalid_auth"
             except CannotConnect:
                 errors["base"] = "cannot_connect"
-            except Exception:  # pragma: no cover
+            except Exception:
                 _LOGGER.exception("Unexpected exception during ABB Egon reauth flow")
                 errors["base"] = "unknown"
             else:
@@ -173,20 +173,22 @@ class ABBEgonOptionsFlow(config_entries.OptionsFlowWithReload):
         if user_input is not None:
             return self.async_create_entry(data=user_input)
 
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    OPTION_SCAN_INTERVAL,
+                    default=DEFAULT_SCAN_INTERVAL,
+                ): vol.All(
+                    vol.Coerce(int),
+                    vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
+                ),
+            }
+        )
+
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        OPTION_SCAN_INTERVAL,
-                        default=self.config_entry.options.get(
-                            OPTION_SCAN_INTERVAL,
-                            DEFAULT_SCAN_INTERVAL,
-                        ),
-                    ): vol.All(
-                        vol.Coerce(int),
-                        vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
-                    ),
-                }
+            data_schema=self.add_suggested_values_to_schema(
+                schema,
+                self.config_entry.options,
             ),
         )
