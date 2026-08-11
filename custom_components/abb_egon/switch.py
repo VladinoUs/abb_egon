@@ -56,6 +56,12 @@ class ABBSwitch(CoordinatorEntity, SwitchEntity):
         _LOGGER.debug("Switch raw_value id=%s raw=%r", self._element_id, value)
         return value
 
+    def _raw_is_on(self) -> bool | None:
+        value = self._raw_value()
+        if value is None:
+            return None
+        return value in {"1", "on", "true"}
+
     @property
     def available(self) -> bool:
         return self.coordinator.last_update_success
@@ -70,16 +76,11 @@ class ABBSwitch(CoordinatorEntity, SwitchEntity):
             )
             return self._optimistic_is_on
 
-        value = self._raw_value()
-        if value is None:
-            result = None
-        else:
-            result = value in {"1", "on", "true"}
+        result = self._raw_is_on()
 
         _LOGGER.debug(
-            "Switch is_on real id=%s raw=%r result=%s",
+            "Switch is_on real id=%s result=%s",
             self._element_id,
-            value,
             result,
         )
         return result
@@ -93,12 +94,12 @@ class ABBSwitch(CoordinatorEntity, SwitchEntity):
         await self.coordinator.api.async_send_action(self._element_id, "on")
         await self.coordinator.async_request_refresh()
 
-        raw_value = self._raw_value()
-        if raw_value is not None:
+        real_is_on = self._raw_is_on()
+        if real_is_on is not None and real_is_on == self._optimistic_is_on:
             _LOGGER.debug(
-                "Switch turn_on confirmed id=%s raw=%r",
+                "Switch turn_on confirmed id=%s real=%s",
                 self._element_id,
-                raw_value,
+                real_is_on,
             )
             self._optimistic_is_on = None
             self.async_write_ha_state()
@@ -112,26 +113,27 @@ class ABBSwitch(CoordinatorEntity, SwitchEntity):
         await self.coordinator.api.async_send_action(self._element_id, "off")
         await self.coordinator.async_request_refresh()
 
-        raw_value = self._raw_value()
-        if raw_value is not None:
+        real_is_on = self._raw_is_on()
+        if real_is_on is not None and real_is_on == self._optimistic_is_on:
             _LOGGER.debug(
-                "Switch turn_off confirmed id=%s raw=%r",
+                "Switch turn_off confirmed id=%s real=%s",
                 self._element_id,
-                raw_value,
+                real_is_on,
             )
             self._optimistic_is_on = None
             self.async_write_ha_state()
 
     def _handle_coordinator_update(self) -> None:
-        raw_value = self._raw_value()
+        real_is_on = self._raw_is_on()
         _LOGGER.debug(
-            "Switch coordinator_update id=%s raw=%r optimistic=%r",
+            "Switch coordinator_update id=%s real=%r optimistic=%r",
             self._element_id,
-            raw_value,
+            real_is_on,
             self._optimistic_is_on,
         )
 
-        if raw_value is not None:
-            self._optimistic_is_on = None
+        if real_is_on is not None:
+            if self._optimistic_is_on is None or real_is_on == self._optimistic_is_on:
+                self._optimistic_is_on = None
 
         super()._handle_coordinator_update()
