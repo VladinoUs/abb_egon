@@ -41,16 +41,22 @@ class ABBLight(CoordinatorEntity, LightEntity):
         _LOGGER.debug("Light raw_value id=%s raw=%r", self._element_id, value)
         return value
 
+    def _raw_percent(self) -> int | None:
+        value = self._raw_value()
+        if value is None:
+            return None
+        try:
+            return max(0, min(100, int(float(value))))
+        except (ValueError, TypeError):
+            return None
+
     @property
     def is_on(self) -> bool:
         if self._optimistic_is_on is not None:
             _LOGGER.debug("Light is_on optimistic id=%s value=%s", self._element_id, self._optimistic_is_on)
             return self._optimistic_is_on
-        value = self._raw_value()
-        try:
-            result = value is not None and int(float(value)) > 0
-        except (ValueError, TypeError):
-            result = False
+        percent = self._raw_percent()
+        result = percent is not None and percent > 0
         _LOGGER.debug("Light is_on real id=%s result=%s", self._element_id, result)
         return result
 
@@ -59,16 +65,12 @@ class ABBLight(CoordinatorEntity, LightEntity):
         if self._optimistic_brightness is not None:
             _LOGGER.debug("Light brightness optimistic id=%s value=%s", self._element_id, self._optimistic_brightness)
             return self._optimistic_brightness
-        value = self._raw_value()
-        if value is None:
+        percent = self._raw_percent()
+        if percent is None:
             return None
-        try:
-            percent = max(0, min(100, int(float(value))))
-            result = round(percent * 255 / 100)
-            _LOGGER.debug("Light brightness real id=%s percent=%s brightness=%s", self._element_id, percent, result)
-            return result
-        except (ValueError, TypeError):
-            return None
+        result = round(percent * 255 / 100)
+        _LOGGER.debug("Light brightness real id=%s percent=%s brightness=%s", self._element_id, percent, result)
+        return result
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         brightness = kwargs.get(ATTR_BRIGHTNESS)
@@ -94,8 +96,18 @@ class ABBLight(CoordinatorEntity, LightEntity):
         await self.coordinator.async_request_refresh()
 
     def _handle_coordinator_update(self) -> None:
-        _LOGGER.debug("Light coordinator_update id=%s raw=%r", self._element_id, self.coordinator.data.get('states', {}).get(self._element_id))
-        if self._raw_value() is not None:
-            self._optimistic_is_on = None
-            self._optimistic_brightness = None
+        _LOGGER.debug(
+            "Light coordinator_update id=%s raw=%r",
+            self._element_id,
+            self.coordinator.data.get('states', {}).get(self._element_id),
+        )
+        percent = self._raw_percent()
+
+        if percent is not None:
+            real_is_on = percent > 0
+
+            if self._optimistic_is_on is None or real_is_on == self._optimistic_is_on:
+                self._optimistic_is_on = None
+                self._optimistic_brightness = None
+
         super()._handle_coordinator_update()
