@@ -6,7 +6,13 @@ from xml.etree import ElementTree as ET
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, MAX_GROUPS, OPTION_SCAN_INTERVAL
+from .const import (
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+    MAX_GROUPS,
+    OPTION_SCAN_INTERVAL,
+    OPTION_SELECTED_ELEMENTS,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -23,11 +29,13 @@ class ABBEgonDataUpdateCoordinator(DataUpdateCoordinator):
         self.element_to_groups: dict[str, set[int]] = {}
 
         scan_interval = entry.options.get(OPTION_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        self.selected_element_ids: set[str] | None = self._load_selected_elements(entry)
 
         LOGGER.debug(
-            "Coordinator init entryid=%s scaninterval=%s",
+            "Coordinator init entryid=%s scaninterval=%s selected=%s",
             entry.entry_id,
             scan_interval,
+            self.selected_element_ids,
         )
 
         super().__init__(
@@ -37,13 +45,48 @@ class ABBEgonDataUpdateCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(seconds=scan_interval),
         )
 
+    @staticmethod
+    def _load_selected_elements(entry) -> set[str] | None:
+        """Return selected element ids, or None if all elements are polled."""
+        raw = entry.options.get(OPTION_SELECTED_ELEMENTS)
+        if not raw:
+            return None
+        return {str(item) for item in raw}
+
+    def _active_groups(self) -> set[int]:
+        """Groups that actually need to be polled, based on selection."""
+        if self.selected_element_ids is None:
+            return self.groups
+
+        active: set[int] = set()
+        for element_id in self.selected_element_ids:
+            active.update(self.element_to_groups.get(element_id, set()))
+
+        if not active:
+            LOGGER.debug(
+                "Coordinator no groups resolved for selected elements=%s, falling back to all groups",
+                self.selected_element_ids,
+            )
+            return self.groups
+
+        return active
+
+    def _filtered_elements(self) -> list[dict]:
+        """Elements exposed to Home Assistant entities, based on selection."""
+        if self.selected_element_ids is None:
+            return self.elements
+        return [
+            element
+            for element in self.elements
+            if str(element["id"]) in self.selected_element_ids
+        ]
+
     async def _async_update_data(self) -> dict:
         LOGGER.debug(
             "Coordinator update start configloaded=%s device=%s",
             self.config_loaded,
             self.api.device,
         )
-
         try:
             if not self.api.device:
                 LOGGER.debug("Coordinator no device token, authorizing")
@@ -53,18 +96,19 @@ class ABBEgonDataUpdateCoordinator(DataUpdateCoordinator):
                 LOGGER.debug("Coordinator config not loaded, loading config")
                 await self.async_load_config()
 
-            states = await self.async_load_states(self.groups, learn_groups=True)
+            groups_to_poll = self._active_groups()
+            states = await self.async_load_states(groups_to_poll, learn_groups=True)
 
             payload = {
-                "elements": self.elements,
+                "elements": self._filtered_elements(),
                 "states": states,
             }
 
             LOGGER.debug(
-                "Coordinator update success elements=%s states=%s groups=%s",
-                len(self.elements),
+                "Coordinator update success elements=%s states=%s polled_groups=%s",
+                len(payload["elements"]),
                 len(states),
-                sorted(self.groups),
+                sorted(groups_to_poll),
             )
             return payload
 
@@ -179,9 +223,20 @@ class ABBEgonDataUpdateCoordinator(DataUpdateCoordinator):
                 len(xml_text),
                 xml_text[:500],
             )
-            states = self.parse_state_xml(xml_text)
+            all_states = self.parse_state_xml(xml_text)
+
+            if self.selected_element_ids is None:
+                states = all_states
+            else:
+                states = {
+                    element_id: value
+                    for element_id, value in all_states.items()
+                    if element_id in self.selected_element_ids
+                }
+
             LOGGER.debug(
-                "Coordinator full state parsed count=%s sample=%s",
+                "Coordinator full state parsed count=%s filtered=%s sample=%s",
+                len(all_states),
                 len(states),
                 list(states.items())[:10],
             )
@@ -206,6 +261,14 @@ class ABBEgonDataUpdateCoordinator(DataUpdateCoordinator):
                     xml_text[:500],
                 )
                 group_states = self.parse_state_xml(xml_text)
+
+                if self.selected_element_ids is not None:
+                    group_states = {
+                        element_id: value
+                        for element_id, value in group_states.items()
+                        if element_id in self.selected_element_ids
+                    }
+
                 LOGGER.debug(
                     "Coordinator parsed group=%s states=%s",
                     group,
@@ -266,6 +329,7 @@ class ABBEgonDataUpdateCoordinator(DataUpdateCoordinator):
                 or attrib.get("elementid")
                 or attrib.get("element_id")
             )
+
             value = (
                 attrib.get("value")
                 or attrib.get("current")
@@ -318,9 +382,10 @@ class ABBEgonDataUpdateCoordinator(DataUpdateCoordinator):
             current_states.update(partial_states)
 
             payload = {
-                "elements": current.get("elements", self.elements),
+                "elements": current.get("elements", self._filtered_elements()),
                 "states": current_states,
             }
+
             self.async_set_updated_data(payload)
 
             LOGGER.debug(
@@ -328,7 +393,6 @@ class ABBEgonDataUpdateCoordinator(DataUpdateCoordinator):
                 element_id,
                 list(partial_states.keys()),
             )
-
         except Exception as err:
             LOGGER.debug(
                 "Coordinator refreshelement failed id=%s err=%s",
