@@ -38,19 +38,24 @@ class ABBNumber(CoordinatorEntity, NumberEntity):
         self._optimistic_value: float | None = None
         _LOGGER.debug("Number init id=%s name=%s group=%s", self._element_id, self._attr_name, element.get('group'))
 
-    @property
-    def native_value(self) -> float | None:
-        if self._optimistic_value is not None:
-            _LOGGER.debug("Number native_value optimistic id=%s value=%s", self._element_id, self._optimistic_value)
-            return self._optimistic_value
+    def _raw_value(self) -> float | None:
         value = self.coordinator.data.get("states", {}).get(self._element_id)
-        _LOGGER.debug("Number native_value real id=%s raw=%r", self._element_id, value)
+        _LOGGER.debug("Number raw_value id=%s raw=%r", self._element_id, value)
         if value is None:
             return None
         try:
             return float(value)
         except (ValueError, TypeError):
             return None
+
+    @property
+    def native_value(self) -> float | None:
+        if self._optimistic_value is not None:
+            _LOGGER.debug("Number native_value optimistic id=%s value=%s", self._element_id, self._optimistic_value)
+            return self._optimistic_value
+        value = self._raw_value()
+        _LOGGER.debug("Number native_value real id=%s value=%r", self._element_id, value)
+        return value
 
     async def async_set_native_value(self, value: float) -> None:
         _LOGGER.debug("Number set_value id=%s value=%s", self._element_id, value)
@@ -60,7 +65,16 @@ class ABBNumber(CoordinatorEntity, NumberEntity):
         await self.coordinator.async_request_refresh()
 
     def _handle_coordinator_update(self) -> None:
-        _LOGGER.debug("Number coordinator_update id=%s raw=%r", self._element_id, self.coordinator.data.get('states', {}).get(self._element_id))
-        if self.coordinator.data.get("states", {}).get(self._element_id) is not None:
-            self._optimistic_value = None
+        real_value = self._raw_value()
+        _LOGGER.debug(
+            "Number coordinator_update id=%s real=%r optimistic=%r",
+            self._element_id,
+            real_value,
+            self._optimistic_value,
+        )
+
+        if real_value is not None:
+            if self._optimistic_value is None or abs(real_value - self._optimistic_value) < 0.01:
+                self._optimistic_value = None
+
         super()._handle_coordinator_update()
