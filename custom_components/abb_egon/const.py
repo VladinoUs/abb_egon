@@ -11,6 +11,7 @@ PLATFORMS: list[Platform] = [
     Platform.NUMBER,
     Platform.BUTTON,
 ]
+
 DEFAULT_NAME = "ABB Egon"
 DEFAULT_PORT = 80
 DEFAULT_USERNAME = "ABB"
@@ -20,3 +21,4 @@ MIN_SCAN_INTERVAL = 5
 MAX_SCAN_INTERVAL = 300
 MAX_GROUPS = 16
 OPTION_SCAN_INTERVAL = "scan_interval"
+OPTION_SELECTED_ELEMENTS = "selected_elements"
