@@ -11,6 +11,7 @@ from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_PORT, CONF_USERNAME
 from homeassistant.core import callback
+from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import ABBEgonClient
@@ -23,6 +24,7 @@ from .const import (
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
     OPTION_SCAN_INTERVAL,
+    OPTION_SELECTED_ELEMENTS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -171,19 +173,49 @@ class ABBEgonOptionsFlow(config_entries.OptionsFlowWithReload):
     ) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
-            return self.async_create_entry(data=user_input)
-
-        schema = vol.Schema(
-            {
-                vol.Required(
-                    OPTION_SCAN_INTERVAL,
-                    default=DEFAULT_SCAN_INTERVAL,
-                ): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
-                ),
+            selected = user_input.get(OPTION_SELECTED_ELEMENTS)
+            data: dict[str, Any] = {
+                OPTION_SCAN_INTERVAL: user_input[OPTION_SCAN_INTERVAL],
             }
-        )
+            if selected:
+                data[OPTION_SELECTED_ELEMENTS] = selected
+            return self.async_create_entry(data=data)
+
+        coordinator = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        elements = coordinator.elements if coordinator else []
+
+        element_options = [
+            selector.SelectOptionDict(
+                value=str(element["id"]),
+                label=f"{element.get('name', element['id'])} ({element.get('type', '?')})",
+            )
+            for element in sorted(
+                elements, key=lambda e: e.get("name", str(e["id"]))
+            )
+        ]
+
+        schema_dict: dict[Any, Any] = {
+            vol.Required(
+                OPTION_SCAN_INTERVAL,
+                default=DEFAULT_SCAN_INTERVAL,
+            ): vol.All(
+                vol.Coerce(int),
+                vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
+            ),
+        }
+
+        if element_options:
+            schema_dict[vol.Optional(OPTION_SELECTED_ELEMENTS)] = (
+                selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=element_options,
+                        multiple=True,
+                        mode=selector.SelectSelectorMode.LIST,
+                    )
+                )
+            )
+
+        schema = vol.Schema(schema_dict)
 
         return self.async_show_form(
             step_id="init",
