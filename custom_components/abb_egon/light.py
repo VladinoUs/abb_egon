@@ -34,7 +34,7 @@ class ABBLight(CoordinatorEntity, LightEntity):
         self._attr_unique_id = f"abb_egon_light_{self._element_id}"
         self._optimistic_brightness: int | None = None
         self._optimistic_is_on: bool | None = None
-        _LOGGER.debug("Light init id=%s name=%s group=%s", self._element_id, self._attr_name, element.get('group'))
+        _LOGGER.debug("Light init id=%s name=%s group=%s", self._element_id, self._attr_name, element.get("group"))
 
     def _raw_value(self) -> str | None:
         value = self.coordinator.data.get("states", {}).get(self._element_id)
@@ -85,7 +85,7 @@ class ABBLight(CoordinatorEntity, LightEntity):
         self._optimistic_brightness = optimistic_brightness
         self.async_write_ha_state()
         await self.coordinator.api.async_send_action(self._element_id, str(percent))
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_refresh_element(self._element_id)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         _LOGGER.debug("Light turn_off id=%s", self._element_id)
@@ -93,13 +93,13 @@ class ABBLight(CoordinatorEntity, LightEntity):
         self._optimistic_brightness = 0
         self.async_write_ha_state()
         await self.coordinator.api.async_send_action(self._element_id, "0")
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_refresh_element(self._element_id)
 
     def _handle_coordinator_update(self) -> None:
         _LOGGER.debug(
             "Light coordinator_update id=%s raw=%r",
             self._element_id,
-            self.coordinator.data.get('states', {}).get(self._element_id),
+            self.coordinator.data.get("states", {}).get(self._element_id),
         )
         percent = self._raw_percent()
 
