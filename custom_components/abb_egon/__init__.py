@@ -41,9 +41,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
     _async_cleanup_stale_entities(hass, entry, coordinator)
+
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     _LOGGER.debug(
         "ABB Egon async_setup_entry done entry_id=%s platforms=%s",
@@ -53,32 +53,54 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-def _async_cleanup_stale_entities(hass: HomeAssistant, entry: ConfigEntry, coordinator) -> None:
+def _async_cleanup_stale_entities(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    coordinator: ABBEgonDataUpdateCoordinator,
+) -> None:
     """Remove entities that are no longer part of the selected elements."""
     if coordinator.selected_element_ids is None:
         _LOGGER.debug("ABB Egon cleanup skipped, no element filter active")
         return
 
     registry = er.async_get(hass)
-    active_ids = coordinator.selected_element_ids
 
-    entries_to_remove = []
+    allowed_unique_ids: set[str] = set()
+    for element in coordinator.data.get("elements", []):
+        element_id = str(element["id"])
+        element_type = element.get("type")
+
+        if element_type == "SW":
+            allowed_unique_ids.add(f"abb_egon_switch_{element_id}")
+        elif element_type == "DIMM":
+            allowed_unique_ids.add(f"abb_egon_light_{element_id}")
+        elif element_type == "TMPSET":
+            allowed_unique_ids.add(f"abb_egon_number_{element_id}")
+        elif element_type == "ROLL":
+            allowed_unique_ids.add(f"{entry.entry_id}-cover-{element_id}")
+        elif element_type == "ACT":
+            allowed_unique_ids.add(f"abb_egon_button_{element_id}")
+        elif element_type in {"TEMP", "SIG", "LIGHT"}:
+            allowed_unique_ids.add(f"abb_egon_sensor_{element_id}")
+
+    entries_to_remove: list[str] = []
+
     for entity_entry in list(registry.entities.values()):
         if entity_entry.config_entry_id != entry.entry_id:
             continue
 
-        unique_id = entity_entry.unique_id
-        element_id = unique_id.rsplit("_", 1)[-1] if "_" in unique_id else unique_id
-
-        if element_id not in active_ids:
+        if entity_entry.unique_id not in allowed_unique_ids:
             entries_to_remove.append(entity_entry.entity_id)
 
     for entity_id in entries_to_remove:
         _LOGGER.debug("ABB Egon removing stale entity=%s", entity_id)
         registry.async_remove(entity_id)
 
-    if entries_to_remove:
-        _LOGGER.debug("ABB Egon cleanup removed=%s entities", len(entries_to_remove))
+    _LOGGER.debug(
+        "ABB Egon cleanup complete allowed=%s removed=%s",
+        len(allowed_unique_ids),
+        len(entries_to_remove),
+    )
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
