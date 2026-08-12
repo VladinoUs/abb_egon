@@ -55,7 +55,12 @@ async def _validate_input(hass, data: dict[str, Any]) -> str:
         if err.status in (401, 403):
             raise InvalidAuth from err
         raise CannotConnect from err
-    except (aiohttp.ClientError, asyncio.TimeoutError, TimeoutError, ValueError) as err:
+    except ValueError as err:
+        message = str(err).lower()
+        if "auth" in message or "password" in message or "empty device id" in message:
+            raise InvalidAuth from err
+        raise CannotConnect from err
+    except (aiohttp.ClientError, asyncio.TimeoutError, TimeoutError) as err:
         raise CannotConnect from err
 
     return f"{data[CONF_HOST]}:{data[CONF_PORT]}"
